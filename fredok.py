@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # Bot sozlamalari - Bu qiymatlarni o'zgartiring
 BOT_TOKEN = "7626749090:AAFL--dyGniYyUVQ-U0sErxtwOL0qbrytXs"
-WEBHOOK_URL = "https://videodownloaderzbot.onrender.com"
+WEBHOOK_URL = "https://video-fru1.onrender.com"
 PORT = int(os.environ.get("PORT", 8080))
 ADMIN_IDS = [6852738257]
 DATABASE_PATH = "bot_database.db"
