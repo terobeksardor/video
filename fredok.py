@@ -1,3 +1,4 @@
+
 import asyncio
 import logging
 import os
@@ -15,7 +16,9 @@ from functools import lru_cache
 import tempfile
 import shutil
 from concurrent.futures import ThreadPoolExecutor
-from aiohttp import web
+from flask import Flask, request
+import threading
+import json
 
 # Logging sozlamalari
 logging.basicConfig(
@@ -25,14 +28,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Bot sozlamalari - Bu qiymatlarni o'zgartiring
-BOT_TOKEN = "7626749090:AAFL--dyGniYyUVQ-U0sErxtwOL0qbrytXs"
-WEBHOOK_URL = "https://video-1-zoab.onrender.com"
+BOT_TOKEN = "7928019999:AAGGZiOV7aQhCHKRH6Vkqo7nY9sOgpbLKA8"
+WEBHOOK_URL = "https://videodownloaderzbot.onrender.com"
 PORT = int(os.environ.get("PORT", 8080))
 ADMIN_IDS = [6852738257]
 DATABASE_PATH = "bot_database.db"
 
 # Thread pool for downloading
 executor = ThreadPoolExecutor(max_workers=3)
+
+# Flask app
+app = Flask(__name__)
 
 # Ma'lumotlar bazasini yaratish
 def init_database():
@@ -587,35 +593,37 @@ def add_channel_to_db(channel_id, channel_name):
     finally:
         conn.close()
 
-# Webhook handler
-async def webhook_handler(request):
-    try:
-        data = await request.json()
-        update = Update.de_json(data, application.bot)
-        await application.process_update(update)
-        return web.Response(text="OK")
-    except Exception as e:
-        logger.error(f"Webhook xatosi: {e}")
-        return web.Response(text="ERROR", status=500)
-
-# Web server setup
-async def setup_webhook():
-    app = web.Application()
-    app.router.add_post('/webhook', webhook_handler)
-    
-    # Health check endpoint
-    async def health_check(request):
-        return web.Response(text="Bot ishlayapti!")
-    
-    app.router.add_get('/', health_check)
-    
-    return app
-
 # Global application o'zgaruvchisi
 application = None
 
-# Asosiy dastur
-async def main():
+# Flask routes
+@app.route('/')
+def health_check():
+    return "Bot ishlayapti!"
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    try:
+        data = request.get_json()
+        update = Update.de_json(data, application.bot)
+        
+        # Async funksiyani thread da ishga tushirish
+        def run_async_update():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(application.process_update(update))
+            loop.close()
+        
+        thread = threading.Thread(target=run_async_update)
+        thread.start()
+        
+        return "OK"
+    except Exception as e:
+        logger.error(f"Webhook xatosi: {e}")
+        return "ERROR", 500
+
+# Bot ni ishga tushirish
+async def setup_bot():
     global application
     
     # Ma'lumotlar bazasini yaratish
@@ -633,42 +641,37 @@ async def main():
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(CallbackQueryHandler(handle_admin_callback, pattern="^admin_"))
     
-    if WEBHOOK_URL:
-        # Webhook rejimi
-        print("🌐 Webhook rejimida ishga tushmoqda...")
-        
-        # Bot ni ishga tushirish
-        await application.initialize()
-        await application.start()
-        
-        # Webhook o'rnatish
-        await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-        
-        # Web server
-        app = await setup_webhook()
-        
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, '0.0.0.0', PORT)
-        await site.start()
-        
-        print(f"🚀 Server {PORT} portda ishga tushdi")
-        
-        # Server ni ishlab turish
-        try:
-            while True:
-                await asyncio.sleep(3600)
-        except (KeyboardInterrupt, SystemExit):
-            print("🛑 Server to'xtatilmoqda...")
-        finally:
-            await application.stop()
-            await application.shutdown()
-            await runner.cleanup()
+    # Bot ni ishga tushirish
+    await application.initialize()
+    await application.start()
     
-    else:
-        # Polling rejimi
-        print("🤖 Polling rejimida ishga tushmoqda...")
-        await application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Webhook o'rnatish
+    if WEBHOOK_URL:
+        await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+        print(f"✅ Webhook o'rnatildi: {WEBHOOK_URL}/webhook")
+
+def run_bot():
+    """Bot ni alohida thread da ishga tushirish"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(setup_bot())
+    
+    # Loop ni ochiq qoldirish
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        loop.run_until_complete(application.stop())
+        loop.run_until_complete(application.shutdown())
+        loop.close()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    # Bot ni alohida thread da ishga tushirish
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.daemon = True
+    bot_thread.start()
+    
+    print("🌐 Flask server ishga tushmoqda...")
+    print(f"🚀 Server {PORT} portda ishlamoqda")
+    
+    # Flask serverni ishga tushirish
+    app.run(host='0.0.0.0', port=PORT, debug=False)
