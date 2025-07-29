@@ -588,8 +588,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await progress_message.edit_text(f"{error_text} {result['error']}")
                 
         except Exception as e:
-            send_error_text = await get_text(query.from_user.id, 'send_error')
-            await progress_message.edit_text(f"{send_error_text} {str(e)[:100]}")['filename'])
+    send_error_text = await get_text(query.from_user.id, 'send_error')
+    await progress_message.edit_text(f"{send_error_text} {str(e)[:100]}")
                     if file_size > 50 * 1024 * 1024:  # 50MB
                         await progress_message.edit_text("❌ Fayl hajmi juda katta (50MB dan ortiq)")
                     else:
