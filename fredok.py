@@ -28,7 +28,7 @@ level=logging.INFO
 )
 logger = logging.getLogger(name)
 
-Bot sozlamalari - Bu qiymatlarni o'zgartiring
+#Bot sozlamalari - Bu qiymatlarni o'zgartiring
 
 BOT_TOKEN = "7626749090:AAFL--dyGniYyUVQ-U0sErxtwOL0qbrytXs"
 WEBHOOK_URL = "https://video-fru1.onrender.com/webhook"
