@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import os
@@ -29,13 +28,140 @@ logger = logging.getLogger(__name__)
 
 # Bot sozlamalari - Bu qiymatlarni o'zgartiring
 BOT_TOKEN = "7626749090:AAFL--dyGniYyUVQ-U0sErxtwOL0qbrytXs"
-WEBHOOK_URL = "https://video-fru1.onrender.com"
+WEBHOOK_URL = "https://video-fru1.onrender.com/webhook"
 PORT = int(os.environ.get("PORT", 8080))
 ADMIN_IDS = [6852738257]
 DATABASE_PATH = "bot_database.db"
 
-# Thread pool for downloading
-executor = ThreadPoolExecutor(max_workers=3)
+# Tillar
+LANGUAGES = {
+    'uz': {
+        'welcome': """🎬 Video Downloader Bot ga xush kelibsiz!
+
+📱 Quyidagi platformalardan video yuklay olasiz:
+• TikTok
+• YouTube (Video va Shorts)
+• Facebook (Reels va Video)
+• Instagram (Reels, Story, Post)
+
+📝 Foydalanish:
+Video linkini yuboring va kerakli sifatni tanlang!
+
+👨‍💼 Admin: /admin - Admin panel
+📊 Statistika: /stats""",
+        'choose_language': '🌐 Tilni tanlang / Choose language / Выберите язык:',
+        'language_changed': '✅ Til o\'zgartirildi!',
+        'subscription_required': '🔒 Botdan foydalanish uchun quyidagi kanallarga obuna bo\'ling:',
+        'subscription_check': '✅ Tekshirish',
+        'subscription_success': '✅ Tabriklaymiz! Endi botdan foydalanishingiz mumkin.',
+        'subscription_failed': '❌ Siz hali barcha kanallarga obuna bo\'lmadingiz!',
+        'send_link': '❌ Iltimos, to\'g\'ri video linkini yuboring!\n\n📱 Qo\'llab-quvvatlanadigan platformalar:\n• TikTok • YouTube • Facebook • Instagram',
+        'unknown_platform': '❌ Noma\'lum platforma! Qo\'llab-quvvatlanadigan:\n• TikTok • YouTube • Facebook • Instagram',
+        'choose_quality': 'video aniqlandi!\n🎬 Kerakli sifatni tanlang:',
+        'downloading': '⏳ Video yuklanmoqda... (3-5 soniya)',
+        'file_too_large': '❌ Fayl hajmi juda katta (50MB dan ortiq)',
+        'download_error': '❌ Xatolik:',
+        'send_error': '❌ Fayl yuborishda xatolik:',
+        'admin_only': '❌ Sizda admin huquqi yo\'q!',
+        'admin_panel': '👨‍💼 Admin Panel',
+        'stats': '📊 Statistika',
+        'broadcast': '📢 Xabar yuborish',
+        'channels': '⚙️ Kanal sozlamalari',
+        'users': '👥 Foydalanuvchilar',
+        'no_permission': '❌ Ruxsat yo\'q!',
+        'quality_720': '🔥 720p',
+        'quality_480': '📱 480p', 
+        'quality_360': '💾 360p',
+        'quality_audio': '🎵 Audio',
+        'quality_high': '🔥 Yuqori',
+        'quality_medium': '📱 O\'rta',
+        'quality_low': '💾 Past'
+    },
+    'ru': {
+        'welcome': """🎬 Добро пожаловать в Video Downloader Bot!
+
+📱 Вы можете скачивать видео с следующих платформ:
+• TikTok
+• YouTube (Видео и Shorts)
+• Facebook (Reels и Видео)
+• Instagram (Reels, Story, Post)
+
+📝 Использование:
+Отправьте ссылку на видео и выберите нужное качество!
+
+👨‍💼 Админ: /admin - Админ панель
+📊 Статистика: /stats""",
+        'choose_language': '🌐 Tilni tanlang / Choose language / Выберите язык:',
+        'language_changed': '✅ Язык изменен!',
+        'subscription_required': '🔒 Для использования бота подпишитесь на следующие каналы:',
+        'subscription_check': '✅ Проверить',
+        'subscription_success': '✅ Поздравляем! Теперь вы можете пользоваться ботом.',
+        'subscription_failed': '❌ Вы еще не подписались на все каналы!',
+        'send_link': '❌ Пожалуйста, отправьте правильную ссылку на видео!\n\n📱 Поддерживаемые платформы:\n• TikTok • YouTube • Facebook • Instagram',
+        'unknown_platform': '❌ Неизвестная платформа! Поддерживаемые:\n• TikTok • YouTube • Facebook • Instagram',
+        'choose_quality': 'видео найдено!\n🎬 Выберите нужное качество:',
+        'downloading': '⏳ Загружается видео... (3-5 секунд)',
+        'file_too_large': '❌ Размер файла слишком большой (более 50MB)',
+        'download_error': '❌ Ошибка:',
+        'send_error': '❌ Ошибка отправки файла:',
+        'admin_only': '❌ У вас нет прав администратора!',
+        'admin_panel': '👨‍💼 Админ Панель',
+        'stats': '📊 Статистика',
+        'broadcast': '📢 Отправить сообщение',
+        'channels': '⚙️ Настройки каналов',
+        'users': '👥 Пользователи',
+        'no_permission': '❌ Нет разрешения!',
+        'quality_720': '🔥 720p',
+        'quality_480': '📱 480p',
+        'quality_360': '💾 360p', 
+        'quality_audio': '🎵 Аудио',
+        'quality_high': '🔥 Высокое',
+        'quality_medium': '📱 Среднее',
+        'quality_low': '💾 Низкое'
+    },
+    'en': {
+        'welcome': """🎬 Welcome to Video Downloader Bot!
+
+📱 You can download videos from the following platforms:
+• TikTok
+• YouTube (Videos and Shorts)
+• Facebook (Reels and Videos)
+• Instagram (Reels, Stories, Posts)
+
+📝 Usage:
+Send a video link and choose the desired quality!
+
+👨‍💼 Admin: /admin - Admin panel
+📊 Statistics: /stats""",
+        'choose_language': '🌐 Tilni tanlang / Choose language / Выберите язык:',
+        'language_changed': '✅ Language changed!',
+        'subscription_required': '🔒 To use the bot, subscribe to the following channels:',
+        'subscription_check': '✅ Check',
+        'subscription_success': '✅ Congratulations! Now you can use the bot.',
+        'subscription_failed': '❌ You haven\'t subscribed to all channels yet!',
+        'send_link': '❌ Please send a valid video link!\n\n📱 Supported platforms:\n• TikTok • YouTube • Facebook • Instagram',
+        'unknown_platform': '❌ Unknown platform! Supported:\n• TikTok • YouTube • Facebook • Instagram',
+        'choose_quality': 'video detected!\n🎬 Choose the desired quality:',
+        'downloading': '⏳ Downloading video... (3-5 seconds)',
+        'file_too_large': '❌ File size too large (over 50MB)',
+        'download_error': '❌ Error:',
+        'send_error': '❌ File sending error:',
+        'admin_only': '❌ You don\'t have admin rights!',
+        'admin_panel': '👨‍💼 Admin Panel',
+        'stats': '📊 Statistics',
+        'broadcast': '📢 Send message',
+        'channels': '⚙️ Channel settings',
+        'users': '👥 Users',
+        'no_permission': '❌ No permission!',
+        'quality_720': '🔥 720p',
+        'quality_480': '📱 480p',
+        'quality_360': '💾 360p',
+        'quality_audio': '🎵 Audio', 
+        'quality_high': '🔥 High',
+        'quality_medium': '📱 Medium',
+        'quality_low': '💾 Low'
+    }
+}
 
 # Flask app
 app = Flask(__name__)
@@ -52,7 +178,8 @@ def init_database():
             username TEXT,
             first_name TEXT,
             join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            is_active BOOLEAN DEFAULT TRUE
+            is_active BOOLEAN DEFAULT TRUE,
+            language TEXT DEFAULT 'uz'
         )
     ''')
     
@@ -99,9 +226,9 @@ def _add_user_sync(user_id, username, first_name):
     cursor = conn.cursor()
     
     cursor.execute('''
-        INSERT OR IGNORE INTO users (user_id, username, first_name)
-        VALUES (?, ?, ?)
-    ''', (user_id, username, first_name))
+        INSERT OR IGNORE INTO users (user_id, username, first_name, language)
+        VALUES (?, ?, ?, ?)
+    ''', (user_id, username, first_name, 'uz'))
     
     today = datetime.now().date()
     if cursor.rowcount > 0:
@@ -158,7 +285,7 @@ async def _check_single_channel(context, user_id, channel_id):
         return True  # Xato bo'lsa, true qaytaramiz
 
 # Obuna tugmalarini yaratish
-async def get_subscription_keyboard():
+async def get_subscription_keyboard(user_id):
     channels = get_required_channels()
     
     if not channels:
@@ -168,7 +295,8 @@ async def get_subscription_keyboard():
     for channel_id, channel_name in channels:
         keyboard.append([InlineKeyboardButton(f"📢 {channel_name}", url=f"https://t.me/{channel_id.replace('@', '')}")])
     
-    keyboard.append([InlineKeyboardButton("✅ Tekshirish", callback_data="check_subscription")])
+    check_text = await get_text(user_id, 'subscription_check')
+    keyboard.append([InlineKeyboardButton(check_text, callback_data="check_subscription")])
     
     return InlineKeyboardMarkup(keyboard)
 
@@ -177,31 +305,48 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await add_user(user.id, user.username, user.first_name)
     
-    # Obunani tekshirish
-    if not await check_user_subscription(context, user.id):
-        keyboard = await get_subscription_keyboard()
-        if keyboard:
-            await update.message.reply_text(
-                "🔒 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
-                reply_markup=keyboard
-            )
+    # Foydalanuvchi tilini tekshirish
+    user_language = await get_user_language(user.id)
+    
+    # Agar til tanlanmagan bo'lsa, til tanlash tugmalarini ko'rsatish
+    if not user_language or user_language == 'uz':
+        # Yangi foydalanuvchi uchun til tanlash
+        new_user_check = await _check_new_user(user.id)
+        if new_user_check:
+            choose_lang_text = LANGUAGES['uz']['choose_language']
+            keyboard = get_language_keyboard()
+            await update.message.reply_text(choose_lang_text, reply_markup=keyboard)
             return
     
-    welcome_text = """🎬 Video Downloader Bot ga xush kelibsiz!
-
-📱 Quyidagi platformalardan video yuklay olasiz:
-• TikTok
-• YouTube (Video va Shorts)
-• Facebook (Reels va Video)
-• Instagram (Reels, Story, Post)
-
-📝 Foydalanish:
-Video linkini yuboring va kerakli sifatni tanlang!
-
-👨‍💼 Admin: /admin - Admin panel
-📊 Statistika: /stats"""
+    # Obunani tekshirish
+    if not await check_user_subscription(context, user.id):
+        keyboard = await get_subscription_keyboard(user.id)
+        if keyboard:
+            subscription_text = await get_text(user.id, 'subscription_required')
+            await update.message.reply_text(subscription_text, reply_markup=keyboard)
+            return
     
+    welcome_text = await get_text(user.id, 'welcome')
     await update.message.reply_text(welcome_text)
+
+# Yangi foydalanuvchini tekshirish
+async def _check_new_user(user_id):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _check_new_user_sync, user_id)
+
+def _check_new_user_sync(user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT join_date FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+    
+    if result:
+        join_date = datetime.fromisoformat(result[0])
+        now = datetime.now()
+        # Agar 1 daqiqadan kam vaqt o'tgan bo'lsa, yangi foydalanuvchi
+        return (now - join_date).total_seconds() < 60
+    return True
 
 # Video linkini aniqlash
 @lru_cache(maxsize=50)
@@ -219,21 +364,30 @@ def detect_platform(url):
     return None
 
 # Video sifat tugmalarini yaratish
-def get_quality_keyboard(platform, url):
+async def get_quality_keyboard(platform, url, user_id):
     keyboard = []
     
     if platform == 'youtube':
+        quality_720 = await get_text(user_id, 'quality_720')
+        quality_480 = await get_text(user_id, 'quality_480')
+        quality_360 = await get_text(user_id, 'quality_360')
+        quality_audio = await get_text(user_id, 'quality_audio')
+        
         keyboard = [
-            [InlineKeyboardButton("🔥 720p", callback_data=f"dl_720_{url}")],
-            [InlineKeyboardButton("📱 480p", callback_data=f"dl_480_{url}")],
-            [InlineKeyboardButton("💾 360p", callback_data=f"dl_360_{url}")],
-            [InlineKeyboardButton("🎵 Audio", callback_data=f"dl_audio_{url}")]
+            [InlineKeyboardButton(quality_720, callback_data=f"dl_720_{url}")],
+            [InlineKeyboardButton(quality_480, callback_data=f"dl_480_{url}")],
+            [InlineKeyboardButton(quality_360, callback_data=f"dl_360_{url}")],
+            [InlineKeyboardButton(quality_audio, callback_data=f"dl_audio_{url}")]
         ]
     else:
+        quality_high = await get_text(user_id, 'quality_high')
+        quality_medium = await get_text(user_id, 'quality_medium')
+        quality_low = await get_text(user_id, 'quality_low')
+        
         keyboard = [
-            [InlineKeyboardButton("🔥 Yuqori", callback_data=f"dl_high_{url}")],
-            [InlineKeyboardButton("📱 O'rta", callback_data=f"dl_medium_{url}")],
-            [InlineKeyboardButton("💾 Past", callback_data=f"dl_low_{url}")]
+            [InlineKeyboardButton(quality_high, callback_data=f"dl_high_{url}")],
+            [InlineKeyboardButton(quality_medium, callback_data=f"dl_medium_{url}")],
+            [InlineKeyboardButton(quality_low, callback_data=f"dl_low_{url}")]
         ]
     
     return InlineKeyboardMarkup(keyboard)
@@ -302,34 +456,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Obunani tekshirish
     if not await check_user_subscription(context, user.id):
-        keyboard = await get_subscription_keyboard()
+        keyboard = await get_subscription_keyboard(user.id)
         if keyboard:
-            await update.message.reply_text(
-                "🔒 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
-                reply_markup=keyboard
-            )
+            subscription_text = await get_text(user.id, 'subscription_required')
+            await update.message.reply_text(subscription_text, reply_markup=keyboard)
             return
     
     # URL tekshirish
     if not (message_text.startswith('http://') or message_text.startswith('https://')):
-        await update.message.reply_text(
-            "❌ Iltimos, to'g'ri video linkini yuboring!\n\n"
-            "📱 Qo'llab-quvvatlanadigan platformalar:\n"
-            "• TikTok • YouTube • Facebook • Instagram"
-        )
+        send_link_text = await get_text(user.id, 'send_link')
+        await update.message.reply_text(send_link_text)
         return
     
     platform = detect_platform(message_text)
     
     if not platform:
-        await update.message.reply_text(
-            "❌ Noma'lum platforma! Qo'llab-quvvatlanadigan:\n"
-            "• TikTok • YouTube • Facebook • Instagram"
-        )
+        unknown_platform_text = await get_text(user.id, 'unknown_platform')
+        await update.message.reply_text(unknown_platform_text)
         return
     
     # Sifat tanlash tugmalari
-    keyboard = get_quality_keyboard(platform, message_text)
+    keyboard = await get_quality_keyboard(platform, message_text, user.id)
     
     platform_names = {
         'tiktok': 'TikTok',
@@ -338,8 +485,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'instagram': 'Instagram'
     }
     
+    choose_quality_text = await get_text(user.id, 'choose_quality')
     await update.message.reply_text(
-        f"📱 {platform_names[platform]} video aniqlandi!\n🎬 Kerakli sifatni tanlang:",
+        f"📱 {platform_names[platform]} {choose_quality_text}",
         reply_markup=keyboard
     )
 
@@ -368,9 +516,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
+    # Til tanlash
+    if query.data.startswith("lang_"):
+        language = query.data.split("_")[1]
+        await set_user_language(query.from_user.id, language)
+        
+        language_changed_text = await get_text(query.from_user.id, 'language_changed')
+        await query.edit_message_text(language_changed_text)
+        
+        # Welcome xabarini yuborish
+        welcome_text = await get_text(query.from_user.id, 'welcome')
+        await context.bot.send_message(chat_id=query.message.chat_id, text=welcome_text)
+        return
+    
     if query.data == "check_subscription":
         if await check_user_subscription(context, query.from_user.id):
-            await query.edit_message_text("✅ Tabriklaymiz! Endi botdan foydalanishingiz mumkin.")
+            success_text = await get_text(query.from_user.id, 'subscription_success')
+            await query.edit_message_text(success_text)
             
             # Start ni chaqirish uchun fake update yaratamiz
             fake_update = Update(
@@ -379,7 +541,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             await start(fake_update, context)
         else:
-            await query.answer("❌ Siz hali barcha kanallarga obuna bo'lmadingiz!", show_alert=True)
+            failed_text = await get_text(query.from_user.id, 'subscription_failed')
+            await query.answer(failed_text, show_alert=True)
         return
     
     if query.data.startswith("dl_"):
@@ -388,7 +551,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         url = parts[2]
         
         # Yuklanish jarayoni haqida xabar
-        progress_message = await query.edit_message_text("⏳ Video yuklanmoqda... (3-5 soniya)")
+        downloading_text = await get_text(query.from_user.id, 'downloading')
+        progress_message = await query.edit_message_text(downloading_text)
         
         try:
             # Video yuklab olish
@@ -401,6 +565,31 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     
                     # Fayl hajmini tekshirish
                     file_size = os.path.getsize(result['filename'])
+                    if file_size > 50 * 1024 * 1024:  # 50MB
+                        large_file_text = await get_text(query.from_user.id, 'file_too_large')
+                        await progress_message.edit_text(large_file_text)
+                    else:
+                        await context.bot.send_video(
+                            chat_id=query.message.chat_id,
+                            video=video_file,
+                            caption=caption,
+                            supports_streaming=True
+                        )
+                        await progress_message.delete()
+                
+                # Vaqtinchalik fayllarni tozalash
+                shutil.rmtree(result['temp_dir'], ignore_errors=True)
+                
+                # Statistikani yangilash
+                await update_download_stats()
+                
+            else:
+                error_text = await get_text(query.from_user.id, 'download_error')
+                await progress_message.edit_text(f"{error_text} {result['error']}")
+                
+        except Exception as e:
+            send_error_text = await get_text(query.from_user.id, 'send_error')
+            await progress_message.edit_text(f"{send_error_text} {str(e)[:100]}")['filename'])
                     if file_size > 50 * 1024 * 1024:  # 50MB
                         await progress_message.edit_text("❌ Fayl hajmi juda katta (50MB dan ortiq)")
                     else:
@@ -605,19 +794,28 @@ def health_check():
 def webhook():
     try:
         data = request.get_json()
+        if not data:
+            return "No data", 400
+        
+        logger.info(f"Webhook data olindi: {data}")
+        
         update = Update.de_json(data, application.bot)
         
         # Async funksiyani thread da ishga tushirish
         def run_async_update():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(application.process_update(update))
-            loop.close()
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(application.process_update(update))
+                loop.close()
+            except Exception as e:
+                logger.error(f"Update qayta ishlashda xatolik: {e}")
         
         thread = threading.Thread(target=run_async_update)
+        thread.daemon = True
         thread.start()
         
-        return "OK"
+        return "OK", 200
     except Exception as e:
         logger.error(f"Webhook xatosi: {e}")
         return "ERROR", 500
@@ -647,8 +845,16 @@ async def setup_bot():
     
     # Webhook o'rnatish
     if WEBHOOK_URL:
-        await application.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-        print(f"✅ Webhook o'rnatildi: {WEBHOOK_URL}/webhook")
+        webhook_url = f"{WEBHOOK_URL}/webhook"
+        await application.bot.set_webhook(url=webhook_url)
+        print(f"✅ Webhook o'rnatildi: {webhook_url}")
+        
+        # Webhook holatini tekshirish
+        webhook_info = await application.bot.get_webhook_info()
+        print(f"📡 Webhook holati: {webhook_info.url}")
+        print(f"🔗 Pending updates: {webhook_info.pending_update_count}")
+    
+    print("✅ Bot muvaffaqiyatli ishga tushdi!")
 
 def run_bot():
     """Bot ni alohida thread da ishga tushirish"""
@@ -665,13 +871,19 @@ def run_bot():
         loop.close()
 
 if __name__ == '__main__':
+    print("🚀 Bot ishga tushmoqda...")
+    
     # Bot ni alohida thread da ishga tushirish
     bot_thread = threading.Thread(target=run_bot)
     bot_thread.daemon = True
     bot_thread.start()
     
+    # Botning ishga tushishini kutish
+    import time
+    time.sleep(3)
+    
     print("🌐 Flask server ishga tushmoqda...")
     print(f"🚀 Server {PORT} portda ishlamoqda")
     
     # Flask serverni ishga tushirish
-    app.run(host='0.0.0.0', port=PORT, debug=False)
+    app.run(host='0.0.0.0', port=PORT, debug=False, threaded=True)
